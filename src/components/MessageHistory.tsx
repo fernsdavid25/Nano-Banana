@@ -21,7 +21,22 @@ export const MessageHistory: React.FC<MessageHistoryProps> = ({
     scrollToBottom();
   }, [messages, isLoading]);
 
-  if (messages.length === 0) return null;
+  if (messages.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-zinc-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Bot size={24} className="text-zinc-400" />
+          </div>
+          <h3 className="text-white text-lg font-medium mb-2">Start a Conversation</h3>
+          <p className="text-zinc-400 text-sm leading-relaxed">
+            Ask questions about electronics or describe a circuit you'd like to design. 
+            Switch between Design and Chat modes using the buttons below.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -42,18 +57,18 @@ export const MessageHistory: React.FC<MessageHistoryProps> = ({
             <div
               className={`p-3 rounded-2xl ${
                 message.sender === 'user'
-                  ? 'bg-blue-600 text-white ml-auto'
-                  : 'bg-zinc-700 text-white'
+                  ? 'bg-zinc-300 text-zinc-800 ml-auto'
+                  : 'bg-zinc-300 text-zinc-800'
               }`}
             >
-              <p className="text-sm leading-relaxed">{message.text}</p>
+              <p className="text-sm leading-relaxed font-medium">{message.text}</p>
               
               {message.imageUrl && (
                 <div className="mt-3">
                   <img
                     src={message.imageUrl}
                     alt="Generated circuit"
-                    className="max-w-full h-auto rounded-lg"
+                    className="max-w-full h-auto rounded-xl"
                   />
                 </div>
               )}
@@ -85,11 +100,11 @@ export const MessageHistory: React.FC<MessageHistoryProps> = ({
           <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
             <Bot size={16} className="text-white" />
           </div>
-          <div className="bg-zinc-700 p-3 rounded-2xl">
+          <div className="bg-zinc-300 p-4 rounded-2xl">
             <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-zinc-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-zinc-600 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-zinc-600 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-zinc-600 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
             </div>
           </div>
         </div>

@@ -24,14 +24,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggle
 }) => {
   return (
-    <div className={`fixed inset-y-0 left-0 w-80 bg-zinc-900 h-screen flex flex-col border-r border-zinc-800 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <div className={`fixed inset-y-0 left-0 w-80 bg-zinc-900 h-screen flex flex-col border-r border-zinc-700 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Header */}
-      <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+      <div className="p-6 border-b border-zinc-700 flex items-center justify-between">
         <h1 className="text-white text-xl font-semibold">Circuit Designer AI</h1>
         <button
           onClick={onToggle}
           aria-label="Close sidebar"
-          className="p-2 rounded-md hover:bg-zinc-800 text-zinc-300"
+          className="p-2 rounded-md hover:bg-zinc-800 text-zinc-300 transition-colors"
         >
           <X size={18} />
         </button>
@@ -41,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4">
         <button
           onClick={onNewSession}
-          className="w-full flex items-center gap-3 bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-3 rounded-lg transition-colors duration-200"
+          className="w-full flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
         >
           <Plus size={20} />
           <span>New Design</span>
@@ -61,9 +61,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={session.id}
                 onClick={() => onSelectSession(session.id)}
-                className={`w-full text-left p-3 rounded-lg transition-all duration-200 group hover:bg-zinc-800 ${
+                className={`w-full text-left p-3 rounded-xl transition-all duration-200 group hover:bg-zinc-800 ${
                   currentSessionId === session.id 
-                    ? 'bg-zinc-800 border-l-2 border-blue-500' 
+                    ? 'bg-zinc-800 border-l-4 border-blue-500' 
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* API Key Section */}
-      <div className="p-4 border-t border-zinc-800">
+      <div className="p-4 border-t border-zinc-700">
         <div className="flex items-center gap-2 mb-3 text-zinc-400">
           <Key size={18} />
           <span className="font-medium">API Key</span>
@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           value={apiKey}
           onChange={(e) => onApiKeyChange(e.target.value)}
           placeholder="Enter Gemini API Key"
-          className="w-full bg-zinc-800 text-white px-3 py-2 rounded-lg border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors duration-200 text-sm"
+          className="w-full bg-zinc-800 text-white px-3 py-2 rounded-xl border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors duration-200 text-sm"
         />
         <p className="text-xs text-zinc-500 mt-2">
           Get your API key from Google AI Studio

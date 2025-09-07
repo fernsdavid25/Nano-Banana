@@ -32,36 +32,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="border-t border-zinc-700 bg-zinc-900 p-4">
-      {/* Mode Toggle */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Plus size={18} className="text-zinc-400" />
-          <button
-            onClick={() => onModeChange('design')}
-            className={`px-3 py-1 rounded-full text-sm transition-all duration-200 ${
-              mode === 'design'
-                ? 'bg-blue-600 text-white'
-                : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-            }`}
-          >
-            Design
-          </button>
-          <button
-            onClick={() => onModeChange('chat')}
-            className={`px-3 py-1 rounded-full text-sm transition-all duration-200 ${
-              mode === 'chat'
-                ? 'bg-blue-600 text-white'
-                : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-            }`}
-          >
-            Chat
-          </button>
-        </div>
-      </div>
-
+    <div className="bg-zinc-900 p-6">
       {/* Input Area */}
-      <div className="relative">
+      <div className="relative max-w-4xl mx-auto">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -70,24 +43,51 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             ? "Describe the circuit you want to design..." 
             : "Ask questions about circuits and electronics..."
           }
-          className="w-full bg-zinc-800 text-white placeholder-zinc-400 rounded-2xl px-4 py-3 pr-12 border border-zinc-700 focus:border-blue-500 focus:outline-none resize-none transition-colors duration-200"
+          className="w-full bg-zinc-800 text-white placeholder-zinc-500 rounded-2xl px-6 py-4 pr-32 border border-zinc-700 focus:border-blue-500 focus:outline-none resize-none transition-colors duration-200 text-base"
           rows={1}
-          style={{ minHeight: '48px', maxHeight: '120px' }}
+          style={{ minHeight: '56px', maxHeight: '120px' }}
           disabled={isLoading}
         />
         
-        <button
-          onClick={handleSubmit}
-          disabled={!input.trim() || isLoading}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors duration-200"
-        >
-          <Send size={16} className="text-white" />
-        </button>
+        {/* Mode Toggle and Send Button */}
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-zinc-700 rounded-full p-1">
+            <Plus size={14} className="text-zinc-400 ml-2" />
+            <button
+              onClick={() => onModeChange('design')}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
+                mode === 'design'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-zinc-300 hover:text-white'
+              }`}
+            >
+              Design
+            </button>
+            <button
+              onClick={() => onModeChange('chat')}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
+                mode === 'chat'
+                  ? 'bg-zinc-600 text-white shadow-lg'
+                  : 'text-zinc-300 hover:text-white'
+              }`}
+            >
+              Chat
+            </button>
+          </div>
+          
+          <button
+            onClick={handleSubmit}
+            disabled={!input.trim() || isLoading}
+            className="w-10 h-10 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors duration-200 ml-2"
+          >
+            <Send size={18} className="text-white" />
+          </button>
+        </div>
       </div>
 
       {/* Status */}
       {isLoading && (
-        <div className="mt-2 text-center">
+        <div className="mt-3 text-center">
           <span className="text-sm text-zinc-400">
             {mode === 'design' ? 'Generating circuit...' : 'Thinking...'}
           </span>
