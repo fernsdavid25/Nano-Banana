@@ -1,6 +1,6 @@
 import { CircuitGenerationRequest, CircuitGenerationResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 interface GenerateRequest extends CircuitGenerationRequest {
   apiKey: string;
@@ -8,16 +8,30 @@ interface GenerateRequest extends CircuitGenerationRequest {
 
 export const generateCircuit = async (request: GenerateRequest): Promise<CircuitGenerationResponse> => {
   try {
+    // Map frontend camelCase to backend snake_case expected by FastAPI
+    const payload = {
+      prompt: request.prompt,
+      current_image: request.currentImage,
+      mode: request.mode,
+      api_key: request.apiKey,
+    };
+
     const response = await fetch(`${API_BASE_URL}/generate-circuit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Try to extract backend error details for better debugging
+      let detail = '';
+      try {
+        const errData = await response.json();
+        detail = errData?.detail ? ` - ${JSON.stringify(errData.detail)}` : '';
+      } catch {}
+      throw new Error(`HTTP error! status: ${response.status}${detail}`);
     }
 
     const data = await response.json();
