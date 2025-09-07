@@ -136,11 +136,18 @@ async def generate_circuit(request: CircuitGenerationRequest):
         if is_selective:
             from google.genai import types
 
+            # UPDATED Inpainting instruction (more prescriptive guardrails)
             instr = (
-                "You are a professional electronics drafting assistant. Perform precise, localized edits to the circuit "
-                "ONLY within the regions that are painted in the overlay image. Keep all other regions and components "
-                "unchanged. Maintain IEEE/IEC symbols, label clarity, and clean routing. Apply the following user edit "
-                f"instruction: {request.prompt}"
+                "Edit only the painted/masked region. You are a professional electronics drafting assistant performing a "
+                "precise inpainting edit on a technical circuit diagram. Follow these strict rules:\n"
+                "- CHANGE SCOPE: Modify pixels only inside the provided overlay mask. Do NOT alter or move any elements outside the mask.\n"
+                "- STYLE: Preserve the original schematic style (default to clean vector-style schematic: white background, black 1px/1pt lines, Helvetica-like labels). Match existing line weights, font size, alignment, and stroke caps.\n"
+                "- SYMBOLS & LABELS: Use standard IEEE/IEC schematic symbols. If a component is replaced or its value changed, update the label text (e.g., \"BAT1 9VDC\" -> \"BAT1 12VDC\") positioned where the original label was located. Do NOT rename node identifiers unless explicitly requested.\n"
+                "- ROUTING: Maintain orthogonal routing and wire junction conventions. Snap new wires to the existing grid so they remain orthogonal; avoid diagonal wires. Avoid creating unnecessary crossovers.\n"
+                "- COMPONENTS: Do not add new components other than those explicitly requested in the user's edit prompt. If the user requests adding a component, place it cleanly on-grid and add a single-line label with value.\n"
+                "- IMAGE OUTPUT: Return only the edited image (same format as input: PNG if input raster, SVG if input vector). Do not return explanatory text. Preserve original image resolution and DPI. Blend edges to avoid visible seams and keep antialiasing consistent.\n"
+                "- SAFETY & VALIDATION: If the requested edit would create an obviously unsafe or invalid circuit (shorts, missing ground reference when required, or reversed polarity on polarized components), instead do NOT apply the edit and return a concise one-line text response explaining the conflict.\n\n"
+                f"User edit instruction: {request.prompt}"
             )
 
             try:
@@ -224,7 +231,7 @@ async def generate_circuit(request: CircuitGenerationRequest):
             instruction = (
                 "Create a detailed, professional electronic circuit schematic with the following specifications:\n"
                 "- Use standard IEEE/IEC electronic symbols for all components\n"
-                "- Include clear component labels with values (resistors in ohms, capacitors in farads, etc.)\n"
+                "- Include clear component labels with values (resistors in ohms, capacitors in farads, etc.)\n                "
                 "- Show proper wire routing with minimal crossovers\n"
                 "- Add connection points and node labels where appropriate\n"
                 "- Include power supply connections (+V, GND) clearly marked\n"
@@ -393,23 +400,28 @@ async def enhance_prompt(request: PromptEnhancementRequest):
         client = get_gemini_client(request.api_key)
         logger.info(f"/enhance-prompt prompt_len={len(request.prompt)}")
         
+        # UPDATED Prompt Enhancement instruction
+        # This requests a single MEDIUM-LENGTH enhanced prompt and provides tight guardrails.
         enhancement_instruction = """
-        You are an expert electronics engineer and technical writer. Enhance the following circuit description to be more specific, detailed, and optimized for AI image generation.
+        You are an expert electronics engineer and professional prompt-writer for image-generation models.
+        Produce exactly ONE enhanced, MEDIUM-LENGTH image-generation prompt (2-4 sentences, ~40-120 words) optimized for generating a clean, buildable circuit schematic or a photorealistic top-down wiring photo depending on the user's original intention.
 
-        Apply these best practices:
-        - Be hyper-specific about component types, values, and ratings
-        - Include proper technical terminology and standard symbols
-        - Specify power supply requirements and voltage levels
-        - Describe the physical layout and routing preferences
-        - Add context about the circuit's purpose and application
-        - Include safety considerations and best practices
-        - Use step-by-step descriptions for complex circuits
+        Requirements & guardrails:
+        - Output only the enhanced prompt text; do not include extra headings, explanations, or JSON.
+        - If the original prompt implies a schematic (words like 'diagram', 'schematic', 'symbols'), default to: "clean vector schematic, white background, black 1px lines, Helvetica-like labels, standard IEEE/IEC symbols, SVG output, aspect ratio 4:3".
+        - If the original prompt implies realism (words like 'real life', 'photo', 'top view', 'photorealistic'), default to: "photorealistic top-down wiring photo, neutral diffuse lighting, minimal shadows, high detail, show components mounted on a bench or PCB as appropriate, include camera/lens suggestions (e.g., 50mm equivalent, top-down), PNG output".
+        - Always include a reasonable safe default for unspecified voltages/values: use 9V for single-cell battery examples, and suggest a 220Ω resistor for basic LED protection if an LED is present. If the prompt mentions a specific value, keep it unchanged.
+        - Be explicit about wiring order and connectivity (e.g., "battery positive → switch → lamp → battery negative") and include node labels if relevant (NODE_A, NODE_B).
+        - Include one-line safety guidance in the prompt when the design could be unsafe (e.g., "include series resistor to limit current for LEDs; ensure correct polarity for electrolytics").
+        - Add a negative-style clause to avoid unwanted styles: "no perspective distortion, no color gradients in wires, no decorative backgrounds, no handwritten text".
+        - Prefer vector/SVG for schematics and PNG for photorealistic renders; mention the recommended output format.
+        - Keep the language precise and actionable for an image generator (avoid open-ended questions).
 
         Original prompt: {original_prompt}
 
         Enhanced prompt:
         """
-        
+
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=[enhancement_instruction.format(original_prompt=request.prompt)]
