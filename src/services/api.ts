@@ -1,6 +1,6 @@
 import { CircuitGenerationRequest, CircuitGenerationResponse } from '../types';
 
-const API_BASE_URL = 'https://nano-banana-backend.vercel.app';
+const API_BASE_URL = 'https://d690c02de799.ngrok-free.app';
 
 interface GenerateRequest extends CircuitGenerationRequest {
   apiKey: string;
@@ -35,7 +35,14 @@ export const generateCircuit = async (request: GenerateRequest): Promise<Circuit
     }
 
     const data = await response.json();
-    return data;
+    // Normalize snake_case from backend to camelCase expected by the app
+    const normalized: CircuitGenerationResponse = {
+      text: data.text,
+      imageUrl: data.image_url,
+      success: data.success,
+      error: data.error,
+    };
+    return normalized;
   } catch (error) {
     console.error('Error generating circuit:', error);
     return {

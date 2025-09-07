@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { Message } from '../types';
 import { User, Bot, Clock } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MessageHistoryProps {
   messages: Message[];
@@ -61,7 +63,41 @@ export const MessageHistory: React.FC<MessageHistoryProps> = ({
                   : 'bg-zinc-300 text-zinc-800'
               }`}
             >
-              <p className="text-sm leading-relaxed font-medium">{message.text}</p>
+              <div className="text-sm leading-relaxed">
+                {/** Normalize common escaped sequences from API responses */}
+                {(() => {
+                  let text = message.text ?? '';
+                  // Replace escaped newlines and tabs with actual characters
+                  text = text.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+                  // Ensure a blank line before list items for GFM when needed
+                  text = text.replace(/([^\n])\n(\s*[*-]\s)/g, '$1\n\n$2');
+                  // Collapse excessive spaces
+                  text = text.replace(/\u00A0/g, ' ');
+                  return (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: (props: any) => <h1 className="text-lg font-semibold mb-2" {...props} />,
+                        h2: (props: any) => <h2 className="text-base font-semibold mb-2" {...props} />,
+                        h3: (props: any) => <h3 className="text-sm font-semibold mb-2" {...props} />,
+                        p: (props: any) => <p className="mb-2" {...props} />,
+                        ul: (props: any) => <ul className="list-disc pl-5 mb-2" {...props} />,
+                        ol: (props: any) => <ol className="list-decimal pl-5 mb-2" {...props} />,
+                        li: (props: any) => <li className="mb-1" {...props} />,
+                        strong: (props: any) => <strong className="font-semibold" {...props} />,
+                        em: (props: any) => <em className="italic" {...props} />,
+                        code: (props: any) => (
+                          <code className={`bg-zinc-200 text-zinc-900 px-1 py-0.5 rounded ${props.className || ''}`} {...props} />
+                        ),
+                        a: (props: any) => <a className="text-blue-700 underline" target="_blank" rel="noreferrer" {...props} />,
+                        hr: (props: any) => <hr className="my-3 border-zinc-400" {...props} />,
+                      }}
+                    >
+                      {text}
+                    </ReactMarkdown>
+                  );
+                })()}
+              </div>
               
               {message.imageUrl && (
                 <div className="mt-3">

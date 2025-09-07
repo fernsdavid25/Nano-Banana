@@ -21,7 +21,8 @@ function App() {
     createNewSession,
     loadSession,
     clearCanvas,
-    downloadImage
+    downloadImage,
+    attachImage
   } = useChat();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -85,9 +86,6 @@ function App() {
       <div className="flex-1 flex overflow-hidden">
         {/* Circuit Canvas - Left Half */}
         <div className="w-1/2 flex flex-col bg-zinc-800 border-r border-zinc-700">
-          <div className="bg-zinc-900 border-b border-zinc-700 px-6 py-3">
-            <h2 className="text-white font-medium text-center">Circuit Canvas</h2>
-          </div>
           <Canvas
             currentImage={currentImage}
             onClear={clearCanvas}
@@ -99,9 +97,6 @@ function App() {
 
         {/* Chat Area - Right Half */}
         <div className="w-1/2 flex flex-col bg-zinc-800">
-          <div className="bg-zinc-900 border-b border-zinc-700 px-6 py-3">
-            <h2 className="text-white font-medium text-center">Chat</h2>
-          </div>
           <MessageHistory messages={messages} isLoading={isLoading} />
         </div>
       </div>
@@ -113,6 +108,7 @@ function App() {
           isLoading={isLoading}
           mode={mode}
           onModeChange={setMode}
+          onAttachImage={attachImage}
         />
       </div>
 

@@ -154,6 +154,24 @@ export const useChat = () => {
     document.body.removeChild(link);
   }, [currentImage]);
 
+  // Attach an image from the user (PNG/JPEG/WEBP/HEIC/HEIF) and set it as current canvas image
+  const attachImage = useCallback((file: File) => {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const url = reader.result as string;
+          setCurrentImage(url);
+          resolve();
+        };
+        reader.onerror = (e) => reject(e);
+        reader.readAsDataURL(file);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }, []);
+
   // Persist API key
   useEffect(() => {
     try {
@@ -185,5 +203,6 @@ export const useChat = () => {
     loadSession,
     clearCanvas,
     downloadImage
+    , attachImage
   };
 };
