@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, RotateCcw, Image as ImageIcon, Zap } from 'lucide-react';
+import { Download, RotateCcw, Zap } from 'lucide-react';
 
 interface CanvasProps {
   currentImage: string | null;
@@ -16,36 +16,51 @@ export const Canvas: React.FC<CanvasProps> = ({
   isVisible,
   className
 }) => {
+  // Debug logging for image display
+  React.useEffect(() => {
+    console.log('Canvas currentImage updated:', {
+      hasImage: !!currentImage,
+      imageLength: currentImage ? currentImage.length : 0,
+      imagePrefix: currentImage ? currentImage.substring(0, 50) : null,
+      isDataURL: currentImage ? currentImage.startsWith('data:') : false
+    });
+  }, [currentImage]);
+
   if (!isVisible) return null;
 
   return (
     <div className={`${className || ''} flex flex-col bg-zinc-800 relative h-full`}>
       {/* Canvas Area */}
-      <div className="flex-1 p-6 flex flex-col items-center justify-center relative">
+      <div className="flex-1 p-6 flex flex-col items-center justify-center relative overflow-auto">
         {currentImage ? (
           <div className="bg-white rounded-2xl p-6 max-w-full max-h-full overflow-auto shadow-2xl relative">
             {/* Action buttons positioned over the image */}
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
               <button
                 onClick={onClear}
-                className="flex items-center gap-2 px-3 py-2 bg-zinc-800/90 hover:bg-zinc-700/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
+                title="Clear"
+                className="p-2 bg-zinc-800/90 hover:bg-zinc-700/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
               >
                 <RotateCcw size={16} />
-                <span className="text-sm">Clear</span>
               </button>
               
               <button
                 onClick={onDownload}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600/90 hover:bg-blue-500/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
+                title="Save"
+                className="p-2 bg-blue-600/90 hover:bg-blue-500/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
               >
                 <Download size={16} />
-                <span className="text-sm">Save</span>
               </button>
             </div>
             <img
               src={currentImage}
               alt="Generated Circuit Diagram"
               className="max-w-full h-auto rounded-xl"
+              onLoad={() => console.log('Image loaded successfully')}
+              onError={(e) => {
+                console.error('Image failed to load:', e);
+                console.error('Image src:', currentImage?.substring(0, 100));
+              }}
             />
           </div>
         ) : (

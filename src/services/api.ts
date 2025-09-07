@@ -1,6 +1,17 @@
 import { CircuitGenerationRequest, CircuitGenerationResponse } from '../types';
 
-const API_BASE_URL = 'https://d690c02de799.ngrok-free.app';
+const API_BASE_URL = 'https://192494d08347.ngrok-free.app';
+
+interface PromptEnhancementRequest {
+  prompt: string;
+  apiKey: string;
+}
+
+interface PromptEnhancementResponse {
+  enhanced_prompt: string;
+  success: boolean;
+  error?: string;
+}
 
 interface GenerateRequest extends CircuitGenerationRequest {
   apiKey: string;
@@ -35,6 +46,15 @@ export const generateCircuit = async (request: GenerateRequest): Promise<Circuit
     }
 
     const data = await response.json();
+    
+    // Debug logging
+    console.log('API Response data:', {
+      text: data.text ? `${data.text.substring(0, 100)}...` : null,
+      imageUrl: data.image_url ? `${data.image_url.substring(0, 50)}...` : null,
+      success: data.success,
+      error: data.error
+    });
+    
     // Normalize snake_case from backend to camelCase expected by the app
     const normalized: CircuitGenerationResponse = {
       text: data.text,
@@ -49,5 +69,37 @@ export const generateCircuit = async (request: GenerateRequest): Promise<Circuit
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
+  }
+};
+
+export const enhancePrompt = async (request: PromptEnhancementRequest): Promise<string> => {
+  try {
+    const payload = {
+      prompt: request.prompt,
+      api_key: request.apiKey,
+    };
+
+    const response = await fetch(`${API_BASE_URL}/enhance-prompt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: PromptEnhancementResponse = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to enhance prompt');
+    }
+
+    return data.enhanced_prompt;
+  } catch (error) {
+    console.error('Error enhancing prompt:', error);
+    throw error;
   }
 };

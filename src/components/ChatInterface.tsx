@@ -1,5 +1,5 @@
 import React, { useState, KeyboardEvent, useEffect, useRef } from 'react';
-import { SendHorizontal, Plus } from 'lucide-react';
+import { SendHorizontal, Plus, Sparkles } from 'lucide-react';
 import { Mode } from '../types';
 
 interface ChatInterfaceProps {
@@ -8,6 +8,7 @@ interface ChatInterfaceProps {
   mode: Mode;
   onModeChange: (mode: Mode) => void;
   onAttachImage: (file: File) => void;
+  onEnhancePrompt?: (prompt: string) => Promise<string>;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -15,9 +16,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   isLoading,
   mode,
   onModeChange,
-  onAttachImage
+  onAttachImage,
+  onEnhancePrompt
 }) => {
   const [input, setInput] = useState('');
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const controlsRef = useRef<HTMLDivElement | null>(null);
@@ -64,6 +67,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
+    }
+  };
+
+  const handleEnhancePrompt = async () => {
+    if (!input.trim() || !onEnhancePrompt || isEnhancing || isLoading) return;
+    
+    setIsEnhancing(true);
+    try {
+      const enhanced = await onEnhancePrompt(input.trim());
+      setInput(enhanced);
+      requestAnimationFrame(adjustHeight);
+    } catch (error) {
+      console.error('Failed to enhance prompt:', error);
+    } finally {
+      setIsEnhancing(false);
     }
   };
 
@@ -124,6 +142,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <Plus size={18} className="text-white/90" />
           </button>
           <div className="flex items-center gap-2">
+            {/* Prompt Enhancement Button */}
+            {onEnhancePrompt && input.trim() && (
+              <button
+                onClick={handleEnhancePrompt}
+                disabled={isEnhancing || isLoading}
+                className="p-1 rounded-full hover:bg-white/10 transition-colors disabled:opacity-50"
+                title="Enhance prompt with AI"
+              >
+                <Sparkles size={16} className={`${isEnhancing ? 'animate-pulse text-yellow-400' : 'text-white/90'}`} />
+              </button>
+            )}
             <button
               onClick={() => onModeChange('design')}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 border ${

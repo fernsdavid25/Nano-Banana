@@ -4,6 +4,7 @@ import { Canvas } from './components/Canvas';
 import { ChatInterface } from './components/ChatInterface';
 import { MessageHistory } from './components/MessageHistory';
 import { useChat } from './hooks/useChat';
+import { enhancePrompt } from './services/api';
 import { Menu, Monitor } from 'lucide-react';
 
 function App() {
@@ -28,6 +29,11 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [pendingApiKey, setPendingApiKey] = useState(apiKey || '');
   const [isMobile, setIsMobile] = useState(false);
+
+  const handleEnhancePrompt = async (prompt: string): Promise<string> => {
+    if (!apiKey) throw new Error('API key required');
+    return await enhancePrompt({ prompt, apiKey });
+  };
 
   // Check if device is mobile
   useEffect(() => {
@@ -109,6 +115,7 @@ function App() {
           mode={mode}
           onModeChange={setMode}
           onAttachImage={attachImage}
+          onEnhancePrompt={handleEnhancePrompt}
         />
       </div>
 

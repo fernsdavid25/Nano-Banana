@@ -4,6 +4,7 @@ export interface Message {
   sender: 'user' | 'ai';
   timestamp: Date;
   imageUrl?: string;
+  imageDataUrl?: string; // original base64 data URL for re-sending to backend
 }
 
 export interface ChatSession {

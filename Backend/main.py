@@ -25,6 +25,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:3000",
         "https://nano-banana-neon.vercel.app",
+        "https://192494d08347.ngrok-free.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -44,6 +45,15 @@ class CircuitGenerationResponse(BaseModel):
     success: bool = True
     error: Optional[str] = None
 
+class PromptEnhancementRequest(BaseModel):
+    prompt: str
+    api_key: str
+
+class PromptEnhancementResponse(BaseModel):
+    enhanced_prompt: str
+    success: bool = True
+    error: Optional[str] = None
+
 # Configure Gemini AI client
 def get_gemini_client(api_key: str):
     return genai.Client(api_key=api_key)
@@ -60,6 +70,28 @@ def base64_to_image(base64_string: str) -> Image.Image:
     
     image_data = base64.b64decode(base64_string)
     return Image.open(io.BytesIO(image_data))
+
+# Best-effort MIME detection from image magic numbers
+def detect_image_mime(image_bytes: bytes, fallback: str = "image/png") -> str:
+    b = image_bytes.lstrip()
+    try:
+        if b.startswith(b"\x89PNG\r\n\x1a\n"):
+            return "image/png"
+        if b.startswith(b"\xff\xd8"):
+            return "image/jpeg"
+        if b.startswith(b"GIF8"):
+            return "image/gif"
+        if b.startswith(b"BM"):
+            return "image/bmp"
+        if (b.startswith(b"II*\x00") or b.startswith(b"MM\x00*")):
+            return "image/tiff"
+        if b.startswith(b"RIFF") and b[8:12] == b"WEBP":
+            return "image/webp"
+        if b.startswith(b"<svg") or b.startswith(b"<?xml"):
+            return "image/svg+xml"
+    except Exception:
+        pass
+    return fallback if isinstance(fallback, str) and fallback.startswith("image/") else "image/png"
 
 # Temporary output directory for saving images
 OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "generated_images")
@@ -85,12 +117,16 @@ async def generate_circuit(request: CircuitGenerationRequest):
         
         if request.mode == "design":
             # Use Gemini 2.5 Flash Image Preview for design generation
-            # Build prompt and contents. If an input image is provided, per best practices,
-            # place the image first and the text instruction after it.
+            # Enhanced instruction based on Gemini best practices for circuit generation
             instruction = (
-                "Modify or create a professional electronic circuit schematic per the following requirements. "
-                "Include standard symbols, clear labels, component values, and proper wire routing. "
-                "Make it suitable for students and hobbyists to understand and build.\n\n"
+                "Create a detailed, professional electronic circuit schematic with the following specifications:\n"
+                "- Use standard IEEE/IEC electronic symbols for all components\n"
+                "- Include clear component labels with values (resistors in ohms, capacitors in farads, etc.)\n"
+                "- Show proper wire routing with minimal crossovers\n"
+                "- Add connection points and node labels where appropriate\n"
+                "- Include power supply connections (+V, GND) clearly marked\n"
+                "- Use a clean, technical drawing style suitable for students and hobbyists\n"
+                "- Ensure the circuit is buildable and follows electrical engineering best practices\n\n"
             )
 
             contents = []
@@ -126,78 +162,73 @@ async def generate_circuit(request: CircuitGenerationRequest):
                 contents=contents,
             )
 
-            # Extract text and image from response
+            # Extract text and image from response - Fixed based on Gemini docs
             text_response = ""
             image_b64_url = None
-            try:
-                parts = response.candidates[0].content.parts
-                logger.info(f"Model returned {len(parts)} part(s) in design mode")
-                for idx, part in enumerate(parts):
-                    if getattr(part, "text", None) is not None:
-                        logger.info(f"part[{idx}] type=text len={len(part.text)}")
-                        text_response += part.text
-                    elif getattr(part, "inline_data", None) is not None:
+            
+            parts = response.candidates[0].content.parts
+            logger.info(f"Model returned {len(parts)} part(s) in design mode")
+            
+            for idx, part in enumerate(parts):
+                if part.text is not None:
+                    logger.info(f"part[{idx}] type=text len={len(part.text)}")
+                    text_response += part.text
+                elif part.inline_data is not None:
+                    logger.info(f"part[{idx}] type=inline_data mime={part.inline_data.mime_type}")
+                    # Get the raw image data
+                    image_data = part.inline_data.data
+                    mime_type = part.inline_data.mime_type or "image/png"
+
+                    # Gemini may return inline_data.data as base64-encoded ASCII or as raw image bytes.
+                    # If it's base64 text (e.g., starts with iVBOR... or /9j/), decode it first.
+                    image_bytes = None
+                    try:
+                        # Ensure we have bytes to attempt base64 decode
+                        b = image_data if isinstance(image_data, (bytes, bytearray)) else str(image_data).encode('utf-8')
+                        # Use validate=False to tolerate newlines/whitespace sometimes present in SDK output
+                        decoded = base64.b64decode(b, validate=False)
+                        # Check for common image magic numbers after decoding
+                        if (
+                            decoded.startswith(b"\x89PNG\r\n\x1a\n")  # PNG
+                            or decoded.startswith(b"\xff\xd8")          # JPEG
+                            or decoded.startswith(b"RIFF")                 # WebP/AVI container
+                            or decoded.startswith(b"GIF8")                 # GIF
+                        ):
+                            image_bytes = decoded
+                            logger.info("inline_data appears to be base64 text; successfully decoded to raw image bytes")
+                    except Exception:
+                        # Not valid base64 text; fall back to original
+                        pass
+
+                    if image_bytes is None:
+                        # Treat original as raw bytes
+                        image_bytes = image_data if isinstance(image_data, (bytes, bytearray)) else bytes(image_data)
+
+                    # Correct the MIME type based on the actual bytes to avoid browser decode failures
+                    real_mime = detect_image_mime(image_bytes, mime_type)
+                    if real_mime != mime_type:
+                        logger.info(f"MIME corrected: model={mime_type} detected={real_mime}")
+                    # Create base64 data URL from actual image bytes
+                    b64_data = base64.b64encode(image_bytes).decode()
+                    image_b64_url = f"data:{real_mime};base64,{b64_data}"
+                    logger.info(f"Created base64 data URL: {mime_type}, size: {len(image_bytes)} bytes")
+
+                    # Try to save as PIL image for debugging (optional, don't fail if this doesn't work)
+                    try:
+                        img = Image.open(io.BytesIO(image_bytes))
+                        save_pil_image(img, prefix="output")
+                        logger.info(f"Successfully saved PIL image: {img.size}")
+                    except Exception as e:
+                        logger.warning(f"Could not save as PIL image (this is OK): {e}")
+                        # Save raw bytes as fallback for debugging
                         try:
-                            # Convert inline image bytes to base64 data URL
-                            data = part.inline_data.data
-                            mime = getattr(part.inline_data, "mime_type", "image/png")
-                            logger.info(f"part[{idx}] type=inline_data mime={mime}")
-                            if isinstance(data, (bytes, bytearray)):
-                                # Try to detect actual format to set correct MIME
-                                img_bytes = data
-                                detected_mime = None
-                                try:
-                                    _img = Image.open(io.BytesIO(img_bytes))
-                                    fmt = (_img.format or '').upper()
-                                    if fmt == 'PNG':
-                                        detected_mime = 'image/png'
-                                    elif fmt == 'JPEG' or fmt == 'JPG':
-                                        detected_mime = 'image/jpeg'
-                                    elif fmt == 'WEBP':
-                                        detected_mime = 'image/webp'
-                                    elif fmt == 'HEIC':
-                                        detected_mime = 'image/heic'
-                                    elif fmt == 'HEIF':
-                                        detected_mime = 'image/heif'
-                                except Exception:
-                                    pass
-                                if detected_mime:
-                                    mime = detected_mime
-                                b64 = base64.b64encode(img_bytes).decode()
-                                image_b64_url = f"data:{mime};base64,{b64}"
-                            elif isinstance(data, str):
-                                # Already base64 string
-                                image_b64_url = f"data:{mime};base64,{data}"
-                                try:
-                                    img_bytes = base64.b64decode(data)
-                                except Exception:
-                                    img_bytes = None
-                            else:
-                                # Fallback path tries to treat as bytes-like
-                                b = bytes(data)
-                                b64 = base64.b64encode(b).decode()
-                                image_b64_url = f"data:{mime};base64,{b64}"
-                                img_bytes = b
-                            # Save output image if we have bytes
-                            if img_bytes:
-                                try:
-                                    out_img = Image.open(io.BytesIO(img_bytes))
-                                    save_pil_image(out_img, prefix="output")
-                                except Exception as e:
-                                    logger.error(f"Failed to decode/save output image via PIL: {e}")
-                                    # Fallback: write raw bytes
-                                    try:
-                                        ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-                                        raw_path = os.path.join(OUTPUT_DIR, f"output-raw-{ts}.bin")
-                                        with open(raw_path, 'wb') as f:
-                                            f.write(img_bytes)
-                                        logger.info(f"Saved raw bytes -> {raw_path}")
-                                    except Exception as e2:
-                                        logger.error(f"Failed to save raw bytes: {e2}")
-                        except Exception as e:
-                            print(f"Error extracting inline image: {e}")
-            except Exception as e:
-                print(f"Error parsing model response: {e}")
+                            ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+                            raw_path = os.path.join(OUTPUT_DIR, f"output-raw-{ts}.bin")
+                            with open(raw_path, 'wb') as f:
+                                f.write(image_bytes)
+                            logger.info(f"Saved raw image bytes -> {raw_path}")
+                        except Exception as e2:
+                            logger.error(f"Failed to save raw bytes: {e2}")
 
             return CircuitGenerationResponse(
                 text=text_response or "Generated circuit diagram",
@@ -249,6 +280,57 @@ async def generate_circuit(request: CircuitGenerationRequest):
             error_message = "API quota exceeded. Please check your Gemini API usage."
         
         return CircuitGenerationResponse(
+            success=False,
+            error=error_message
+        )
+
+@app.post("/enhance-prompt", response_model=PromptEnhancementResponse)
+async def enhance_prompt(request: PromptEnhancementRequest):
+    try:
+        client = get_gemini_client(request.api_key)
+        logger.info(f"/enhance-prompt prompt_len={len(request.prompt)}")
+        
+        enhancement_instruction = """
+        You are an expert electronics engineer and technical writer. Enhance the following circuit description to be more specific, detailed, and optimized for AI image generation.
+
+        Apply these best practices:
+        - Be hyper-specific about component types, values, and ratings
+        - Include proper technical terminology and standard symbols
+        - Specify power supply requirements and voltage levels
+        - Describe the physical layout and routing preferences
+        - Add context about the circuit's purpose and application
+        - Include safety considerations and best practices
+        - Use step-by-step descriptions for complex circuits
+
+        Original prompt: {original_prompt}
+
+        Enhanced prompt:
+        """
+        
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[enhancement_instruction.format(original_prompt=request.prompt)]
+        )
+        
+        enhanced_text = ""
+        for part in response.candidates[0].content.parts:
+            if part.text is not None:
+                enhanced_text += part.text
+        
+        return PromptEnhancementResponse(
+            enhanced_prompt=enhanced_text.strip(),
+            success=True
+        )
+        
+    except Exception as e:
+        error_message = str(e)
+        if "API_KEY" in error_message:
+            error_message = "Invalid API key. Please check your Gemini API key."
+        elif "quota" in error_message.lower():
+            error_message = "API quota exceeded. Please check your Gemini API usage."
+        
+        return PromptEnhancementResponse(
+            enhanced_prompt="",
             success=False,
             error=error_message
         )
