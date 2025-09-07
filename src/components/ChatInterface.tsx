@@ -106,7 +106,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         />
 
         {/* Bottom-left controls */}
-        <div ref={controlsRef} className="pointer-events-auto absolute left-4 bottom-3 flex items-center gap-3">
+        <div ref={controlsRef} className="pointer-events-auto absolute left-4 bottom-5 flex items-center gap-3">
           {/* Hidden file input for images */}
           <input
             ref={fileInputRef}
@@ -155,7 +155,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
             <button
               onClick={() => onModeChange(mode === 'design' ? 'chat' : 'design')}
-              className={`w-20 px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 border ${
+              className={`w-30 px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 border ${
                 mode === 'design'
                   ? 'bg-blue-500 text-white border-blue-400'
                   : 'bg-white text-blue-500 border-blue-400'
@@ -171,7 +171,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <button
           onClick={handleSubmit}
           disabled={!input.trim() || isLoading}
-          className="absolute right-4 bottom-3 text-white disabled:text-zinc-500 transition-opacity hover:opacity-80"
+          className="absolute right-4 bottom-5 text-white disabled:text-zinc-500 transition-opacity hover:opacity-80"
           aria-label="Send message"
         >
           <SendHorizontal size={20} />
