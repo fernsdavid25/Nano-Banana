@@ -33,7 +33,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       {/* Canvas Area */}
       <div className="flex-1 p-6 flex flex-col items-center justify-center relative overflow-auto">
         {currentImage ? (
-          <div className="bg-white rounded-2xl p-6 max-w-full max-h-full overflow-auto shadow-2xl relative">
+          <div className="bg-zinc-800 rounded-2xl p-6 max-w-full max-h-full overflow-auto shadow-2xl relative">
             {/* Action buttons positioned over the image */}
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
               <button
@@ -47,7 +47,7 @@ export const Canvas: React.FC<CanvasProps> = ({
               <button
                 onClick={onDownload}
                 title="Save"
-                className="p-2 bg-blue-600/90 hover:bg-blue-500/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
+                className="p-2 bg-blue-500/90 hover:bg-blue-500/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
               >
                 <Download size={16} />
               </button>

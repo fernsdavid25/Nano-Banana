@@ -41,7 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4">
         <button
           onClick={onNewSession}
-          className="w-full flex items-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
+          className="w-full flex items-center gap-3 bg-blue-500 hover:bg-blue-500 text-white px-4 py-3 rounded-xl transition-colors duration-200 font-medium"
         >
           <Plus size={20} />
           <span>New Design</span>

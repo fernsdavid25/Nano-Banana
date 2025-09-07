@@ -154,24 +154,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </button>
             )}
             <button
-              onClick={() => onModeChange('design')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 border ${
+              onClick={() => onModeChange(mode === 'design' ? 'chat' : 'design')}
+              className={`w-20 px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 border ${
                 mode === 'design'
-                  ? 'bg-white text-blue-600 border-blue-400'
-                  : 'bg-transparent text-white border-white/60 hover:border-white'
+                  ? 'bg-blue-500 text-white border-blue-400'
+                  : 'bg-white text-blue-500 border-blue-400'
               }`}
+              title={`Switch to ${mode === 'design' ? 'Chat' : 'Design'} mode`}
             >
-              Design
-            </button>
-            <button
-              onClick={() => onModeChange('chat')}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 border ${
-                mode === 'chat'
-                  ? 'bg-white text-blue-600 border-blue-400'
-                  : 'bg-transparent text-white border-white/60 hover:border-white'
-              }`}
-            >
-              Chat
+              {mode === 'design' ? 'Design' : 'Chat'}
             </button>
           </div>
         </div>

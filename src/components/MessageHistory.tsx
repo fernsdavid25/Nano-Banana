@@ -50,7 +50,7 @@ export const MessageHistory: React.FC<MessageHistoryProps> = ({
           }`}
         >
           {message.sender === 'ai' && (
-            <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
               <Bot size={16} className="text-white" />
             </div>
           )}
@@ -133,7 +133,7 @@ export const MessageHistory: React.FC<MessageHistoryProps> = ({
 
       {isLoading && (
         <div className="flex gap-3 justify-start">
-          <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+          <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
             <Bot size={16} className="text-white" />
           </div>
           <div className="bg-zinc-300 p-4 rounded-2xl">

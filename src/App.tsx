@@ -146,7 +146,7 @@ function App() {
                     setApiKey(pendingApiKey.trim());
                   }
                 }}
-                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white"
+                className="px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-500 text-white"
               >
                 Save
               </button>
