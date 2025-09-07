@@ -1,5 +1,5 @@
-import React from 'react';
-import { Download, RotateCcw, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, RotateCcw, Zap, Pen, X } from 'lucide-react';
 
 interface CanvasProps {
   currentImage: string | null;
@@ -16,6 +16,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   isVisible,
   className
 }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Debug logging for image display
   React.useEffect(() => {
     console.log('Canvas currentImage updated:', {
@@ -25,6 +27,12 @@ export const Canvas: React.FC<CanvasProps> = ({
       isDataURL: currentImage ? currentImage.startsWith('data:') : false
     });
   }, [currentImage]);
+
+  const handleSelectClick = () => {
+    if (currentImage) {
+      setIsModalOpen(true);
+    }
+  };
 
   if (!isVisible) return null;
 
@@ -38,15 +46,23 @@ export const Canvas: React.FC<CanvasProps> = ({
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
               <button
                 onClick={onClear}
-                title="Clear"
+                title="Clear Canvas"
                 className="p-2 bg-zinc-800/90 hover:bg-zinc-700/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
               >
                 <RotateCcw size={16} />
               </button>
               
               <button
+                onClick={handleSelectClick}
+                title="Selective Edit"
+                className="p-2 bg-zinc-800/90 hover:bg-zinc-700/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
+              >
+                <Pen size={16} />
+              </button>
+              
+              <button
                 onClick={onDownload}
-                title="Save"
+                title="Save Image"
                 className="p-2 bg-blue-500/90 hover:bg-blue-500/90 text-white rounded-lg transition-colors duration-200 backdrop-blur-sm"
               >
                 <Download size={16} />
@@ -74,6 +90,43 @@ export const Canvas: React.FC<CanvasProps> = ({
           </div>
         )}
       </div>
+
+      {/* Selection Preview Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsModalOpen(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative z-10 max-w-4xl max-h-[90vh] w-full mx-4">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-t-xl border-b border-zinc-700">
+              <h3 className="text-white text-lg font-semibold">Selective Edit</h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 text-zinc-400 hover:text-white transition-colors"
+                title="Close preview"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Image Content */}
+            <div className="bg-zinc-900 p-6 rounded-b-xl">
+              <div className="flex justify-center">
+                <img
+                  src={currentImage!}
+                  alt="Circuit Diagram Preview"
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
