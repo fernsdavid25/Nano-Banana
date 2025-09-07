@@ -1,5 +1,5 @@
 import React, { useState, KeyboardEvent } from 'react';
-import { Send, Plus, Eye, EyeOff } from 'lucide-react';
+import { Send, Plus } from 'lucide-react';
 import { Mode } from '../types';
 
 interface ChatInterfaceProps {
@@ -7,19 +7,13 @@ interface ChatInterfaceProps {
   isLoading: boolean;
   mode: Mode;
   onModeChange: (mode: Mode) => void;
-  showCanvas: boolean;
-  onToggleCanvas: () => void;
-  hasMessages: boolean;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   isLoading,
   mode,
-  onModeChange,
-  showCanvas,
-  onToggleCanvas,
-  hasMessages
+  onModeChange
 }) => {
   const [input, setInput] = useState('');
 
@@ -39,7 +33,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="border-t border-zinc-700 bg-zinc-900 p-4">
-      {/* Mode Toggle and Canvas Toggle */}
+      {/* Mode Toggle */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Plus size={18} className="text-zinc-400" />
@@ -64,25 +58,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             Chat
           </button>
         </div>
-
-        {mode === 'chat' && hasMessages && (
-          <button
-            onClick={onToggleCanvas}
-            className="flex items-center gap-2 px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors duration-200"
-          >
-            {showCanvas ? (
-              <>
-                <EyeOff size={16} />
-                <span className="text-sm">Hide Canvas</span>
-              </>
-            ) : (
-              <>
-                <Eye size={16} />
-                <span className="text-sm">Show Canvas</span>
-              </>
-            )}
-          </button>
-        )}
       </div>
 
       {/* Input Area */}
@@ -106,7 +81,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           disabled={!input.trim() || isLoading}
           className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-600 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors duration-200"
         >
-          <Send size={16} className="text-white ml-0.5" />
+          <Send size={16} className="text-white" />
         </button>
       </div>
 

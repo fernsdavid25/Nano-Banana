@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Canvas } from './components/Canvas';
 import { ChatInterface } from './components/ChatInterface';
@@ -16,8 +16,6 @@ function App() {
     currentImage,
     apiKey,
     setApiKey,
-    showCanvas,
-    setShowCanvas,
     sendMessage,
     createNewSession,
     loadSession,
@@ -25,16 +23,13 @@ function App() {
     downloadImage
   } = useChat();
 
-  const toggleCanvas = () => {
-    setShowCanvas(!showCanvas);
-  };
-
-  const hasMessages = messages.length > 0;
-  const showCanvasArea = mode === 'design' || (mode === 'chat' && showCanvas);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [pendingApiKey, setPendingApiKey] = useState(apiKey || '');
+  const showCanvasArea = true; // Always show canvas
 
   return (
     <div className="flex h-screen bg-zinc-800 text-white">
-      {/* Sidebar */}
+      {/* Sidebar Overlay */}
       <Sidebar
         sessions={sessions}
         currentSessionId={currentSessionId}
@@ -42,12 +37,14 @@ function App() {
         onNewSession={createNewSession}
         apiKey={apiKey}
         onApiKeyChange={setApiKey}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen((v) => !v)}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Content Area */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden items-stretch min-h-0">
           {/* Canvas Area */}
           {showCanvasArea && (
             <Canvas
@@ -55,38 +52,26 @@ function App() {
               onClear={clearCanvas}
               onDownload={downloadImage}
               isVisible={true}
+              className="basis-[40%]"
             />
           )}
 
-          {/* Chat Area */}
-          {mode === 'chat' && (
-            <div className={`flex flex-col bg-zinc-800 ${showCanvas ? 'w-96 border-l border-zinc-700' : 'flex-1'}`}>
-              <div className="bg-zinc-900 border-b border-zinc-700 px-4 py-3">
-                <h2 className="text-white font-medium">Chat</h2>
-              </div>
-              
-              <MessageHistory messages={messages} isLoading={isLoading} />
+          {/* Chat Area - Always visible, 60% width */}
+          <div className="basis-[60%] flex flex-col bg-zinc-800 border-l border-zinc-700 h-full">
+            <div className="bg-zinc-900 border-b border-zinc-700 px-4 py-3 flex items-center justify-between">
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="px-3 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700"
+              >
+                Menu
+              </button>
+              <h2 className="text-white font-medium">Chat</h2>
+              <div className="w-16" />
             </div>
-          )}
+            <MessageHistory messages={messages} isLoading={isLoading} />
+          </div>
 
-          {/* Empty State for Design Mode */}
-          {mode === 'design' && !currentImage && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center max-w-md mx-auto">
-                <h2 className="text-2xl font-semibold text-white mb-4">
-                  Welcome to Circuit Designer AI
-                </h2>
-                <p className="text-zinc-400 mb-8 leading-relaxed">
-                  Describe any electronic circuit in natural language, and I'll generate a professional schematic diagram for you. Perfect for students, hobbyists, and engineers.
-                </p>
-                <div className="text-sm text-zinc-500 space-y-2">
-                  <p>• "Design a simple LED blink circuit with 555 timer"</p>
-                  <p>• "Create an amplifier circuit with op-amp"</p>
-                  <p>• "Show me a voltage regulator using LM7805"</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Empty state overlay removed; Canvas has its own placeholder */}
         </div>
 
         {/* Chat Interface - Sticky at bottom */}
@@ -96,12 +81,45 @@ function App() {
             isLoading={isLoading}
             mode={mode}
             onModeChange={setMode}
-            showCanvas={showCanvas}
-            onToggleCanvas={toggleCanvas}
-            hasMessages={hasMessages}
           />
         </div>
       </div>
+
+      {/* API Key Modal - blocks UI when apiKey is empty */}
+      {(!apiKey || apiKey.trim() === '') && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative z-10 w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-xl p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-2">Enter API Key</h3>
+            <p className="text-sm text-zinc-400 mb-4">Please paste your Gemini API key to continue.</p>
+            <input
+              type="password"
+              value={pendingApiKey}
+              onChange={(e) => setPendingApiKey(e.target.value)}
+              placeholder="Enter Gemini API Key"
+              className="w-full bg-zinc-800 text-white px-3 py-2 rounded-lg border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors duration-200 text-sm"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setPendingApiKey('')}
+                className="px-4 py-2 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-200 hover:bg-zinc-700"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => {
+                  if (pendingApiKey.trim()) {
+                    setApiKey(pendingApiKey.trim());
+                  }
+                }}
+                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

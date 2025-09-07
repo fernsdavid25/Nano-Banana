@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Message, ChatSession, Mode } from '../types';
 import { generateCircuit } from '../services/api';
 
@@ -9,7 +9,14 @@ export const useChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<Mode>('design');
   const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKey, setApiKey] = useState<string>(() => {
+    try {
+      return localStorage.getItem('apiKey') || '';
+    } catch {
+      return '';
+    }
+  });
+
   const [showCanvas, setShowCanvas] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -146,6 +153,19 @@ export const useChat = () => {
     link.click();
     document.body.removeChild(link);
   }, [currentImage]);
+
+  // Persist API key
+  useEffect(() => {
+    try {
+      if (apiKey) {
+        localStorage.setItem('apiKey', apiKey);
+      } else {
+        localStorage.removeItem('apiKey');
+      }
+    } catch {
+      // no-op if storage unavailable
+    }
+  }, [apiKey]);
 
   return {
     messages,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChatSession } from '../types';
-import { History, Plus, Key } from 'lucide-react';
+import { History, Plus, Key, X } from 'lucide-react';
 
 interface SidebarProps {
   sessions: ChatSession[];
@@ -9,6 +9,8 @@ interface SidebarProps {
   onNewSession: () => void;
   apiKey: string;
   onApiKeyChange: (key: string) => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -17,15 +19,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectSession,
   onNewSession,
   apiKey,
-  onApiKeyChange
+  onApiKeyChange,
+  isOpen,
+  onToggle
 }) => {
   return (
-    <div className="w-80 bg-zinc-900 h-screen flex flex-col border-r border-zinc-800">
+    <div className={`fixed inset-y-0 left-0 w-80 bg-zinc-900 h-screen flex flex-col border-r border-zinc-800 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Header */}
-      <div className="p-6 border-b border-zinc-800">
-        <h1 className="text-white text-xl font-semibold">
-          Circuit Designer AI
-        </h1>
+      <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+        <h1 className="text-white text-xl font-semibold">Circuit Designer AI</h1>
+        <button
+          onClick={onToggle}
+          aria-label="Close sidebar"
+          className="p-2 rounded-md hover:bg-zinc-800 text-zinc-300"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* New Chat Button */}

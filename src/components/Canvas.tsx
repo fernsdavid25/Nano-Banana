@@ -6,18 +6,20 @@ interface CanvasProps {
   onClear: () => void;
   onDownload: () => void;
   isVisible: boolean;
+  className?: string;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
   currentImage,
   onClear,
   onDownload,
-  isVisible
+  isVisible,
+  className
 }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="flex-1 flex flex-col bg-zinc-800 relative">
+    <div className={`${className || ''} flex flex-col bg-zinc-800 relative h-full`}>
       {/* Canvas Header */}
       <div className="bg-zinc-900 border-b border-zinc-700 px-6 py-4 flex items-center justify-between">
         <h2 className="text-white font-medium">Circuit Canvas</h2>
