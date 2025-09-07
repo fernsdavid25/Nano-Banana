@@ -14,7 +14,11 @@ app = FastAPI(title="Circuit Designer AI Backend")
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://3543daf57765.ngrok-free.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,7 +60,7 @@ async def generate_circuit(request: CircuitGenerationRequest):
         
         if request.mode == "design":
             # Use Gemini 2.5 Flash Image Preview for design generation
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            model = genai.GenerativeModel("gemini-2.5-flash-image-preview")
             
             # Create a comprehensive prompt for circuit generation
             circuit_prompt = f"""
