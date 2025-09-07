@@ -1,6 +1,7 @@
 import { CircuitGenerationRequest, CircuitGenerationResponse } from '../types';
 
-const API_BASE_URL = 'https://thebananaboard.vercel.app';
+// Use the deployed FastAPI backend host, not the frontend host
+const API_BASE_URL = 'https://nano-banana-backend.vercel.app';
 
 interface PromptEnhancementRequest {
   prompt: string;

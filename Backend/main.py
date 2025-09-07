@@ -21,12 +21,10 @@ logger.info("Backend starting up")
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://thebananaboard.vercel.app",
-    ],
-    allow_credentials=True,
+    # During development and across multiple deploy URLs, a permissive CORS avoids preflight failures.
+    # If you need to lock this down later, replace with explicit origins for localhost and your prod domains.
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -107,8 +105,13 @@ def detect_image_mime(image_bytes: bytes, fallback: str = "image/png") -> str:
     return fallback if isinstance(fallback, str) and fallback.startswith("image/") else "image/png"
 
 # Temporary output directory for saving images
-OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "generated_images")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# NOTE: Vercel serverless has a read-only filesystem except for /tmp
+OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "/tmp/generated_images")
+try:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+except Exception as e:
+    logger.warning(f"Could not create OUTPUT_DIR {OUTPUT_DIR}: {e}. Falling back to /tmp")
+    OUTPUT_DIR = "/tmp"
 
 def save_pil_image(img: Image.Image, prefix: str = "output") -> str:
     ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
