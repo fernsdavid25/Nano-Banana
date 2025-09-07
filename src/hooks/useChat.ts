@@ -30,6 +30,10 @@ export const useChat = () => {
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   // currentImageDataUrl: original base64 data URL for sending to backend
   const [currentImageDataUrl, setCurrentImageDataUrl] = useState<string | null>(null);
+  // paintedImageDataUrl: transparent PNG overlay drawn by user for selective edits
+  const [paintedImageDataUrl, setPaintedImageDataUrl] = useState<string | null>(null);
+  // overlayPreviewDataUrl: shown on canvas until a new image is generated or cleared
+  const [overlayPreviewDataUrl, setOverlayPreviewDataUrl] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string>(() => {
     try {
       return localStorage.getItem('apiKey') || '';
@@ -65,6 +69,8 @@ export const useChat = () => {
     setMessages([]);
     setCurrentImage(null);
     setCurrentImageDataUrl(null);
+    setPaintedImageDataUrl(null);
+    setOverlayPreviewDataUrl(null);
 
     return sessionId;
   }, []);
@@ -110,6 +116,7 @@ export const useChat = () => {
         prompt: text,
         // Always attach the canvas image in data URL form if available
         currentImage: currentImageDataUrl || undefined,
+        paintedImage: paintedImageDataUrl || undefined,
         mode,
         apiKey
       });
@@ -138,8 +145,16 @@ export const useChat = () => {
         console.log('Setting current image from response');
         setCurrentImage(imageUrl);
         setCurrentImageDataUrl(response.imageUrl!);
+        // New image replaces any previous overlay preview
+        setOverlayPreviewDataUrl(null);
       } else {
         console.log('No image URL in response');
+      }
+
+      // Clear the painted selection after it has been sent once
+      if (paintedImageDataUrl) {
+        setPaintedImageDataUrl(null);
+        // Keep overlayPreviewDataUrl until a new image arrives or user clears/changes
       }
 
       // Update session
@@ -167,11 +182,15 @@ export const useChat = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentSessionId, mode, currentImageDataUrl, apiKey, isLoading, createNewSession]);
+  }, [currentSessionId, mode, currentImageDataUrl, paintedImageDataUrl, apiKey, isLoading, createNewSession]);
+  // NOTE: We intentionally do not include paintedImageDataUrl in dependencies to avoid stale re-sends
+  // of previous selections when users type subsequent messages without re-applying selection.
 
   const clearCanvas = useCallback(() => {
     setCurrentImage(null);
     setCurrentImageDataUrl(null);
+    setPaintedImageDataUrl(null);
+    setOverlayPreviewDataUrl(null);
     createNewSession();
   }, [createNewSession]);
 
@@ -198,6 +217,8 @@ export const useChat = () => {
           // Convert to blob URL for display
           const blobUrl = dataUrlToBlobUrl(dataUrl);
           setCurrentImage(blobUrl);
+          // On a new upload, clear any previous overlay preview
+          setOverlayPreviewDataUrl(null);
           resolve();
         };
         reader.onerror = (e) => reject(e);
@@ -230,6 +251,12 @@ export const useChat = () => {
     setMode,
     currentImage,
     currentImageDataUrl,
+    overlayPreviewDataUrl,
+    // expose setter to allow Canvas modal to apply the selection overlay
+    applySelection: (dataUrl: string) => {
+      setPaintedImageDataUrl(dataUrl);
+      setOverlayPreviewDataUrl(dataUrl);
+    },
     apiKey,
     setApiKey,
     showCanvas,

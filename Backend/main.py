@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 import logging
 
-app = FastAPI(title="Circuit Designer AI Backend")
+app = FastAPI(title="The Banana Board Backend")
 
 # Logging configuration
 logger = logging.getLogger("circuit_designer")
@@ -24,8 +24,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
-        "https://nano-banana-neon.vercel.app",
-        "https://192494d08347.ngrok-free.app",
+        "https://thebananaboard.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -36,6 +35,7 @@ app.add_middleware(
 class CircuitGenerationRequest(BaseModel):
     prompt: str
     current_image: Optional[str] = None
+    painted_image: Optional[str] = None  # optional overlay/mask as base64 data URL
     mode: str = "design"  # "design" or "chat"
     api_key: str
 
@@ -70,6 +70,19 @@ def base64_to_image(base64_string: str) -> Image.Image:
     
     image_data = base64.b64decode(base64_string)
     return Image.open(io.BytesIO(image_data))
+
+def data_url_to_bytes(data_url: str) -> bytes:
+    """Convert a base64 data URL or bare base64 string to bytes."""
+    if data_url.startswith("data:"):
+        try:
+            data_url = data_url.split(",", 1)[1]
+        except Exception:
+            pass
+    try:
+        return base64.b64decode(data_url, validate=False)
+    except Exception:
+        # As a last resort, try interpreting as raw bytes string
+        return data_url.encode()
 
 # Best-effort MIME detection from image magic numbers
 def detect_image_mime(image_bytes: bytes, fallback: str = "image/png") -> str:
@@ -115,6 +128,93 @@ async def generate_circuit(request: CircuitGenerationRequest):
             f"/generate-circuit mode={request.mode} prompt_len={len(request.prompt)} has_image={bool(request.current_image)}"
         )
         
+        # Selective edit path (always image output)
+        is_selective = bool(request.painted_image) and bool(request.current_image)
+        if is_selective:
+            from google.genai import types
+
+            instr = (
+                "You are a professional electronics drafting assistant. Perform precise, localized edits to the circuit "
+                "ONLY within the regions that are painted in the overlay image. Keep all other regions and components "
+                "unchanged. Maintain IEEE/IEC symbols, label clarity, and clean routing. Apply the following user edit "
+                f"instruction: {request.prompt}"
+            )
+
+            try:
+                base_bytes = data_url_to_bytes(request.current_image)
+                overlay_bytes = data_url_to_bytes(request.painted_image)
+
+                base_mime = detect_image_mime(base_bytes, "image/png")
+                # Overlay is always a transparent PNG from the UI
+                overlay_mime = "image/png"
+
+                contents = [
+                    instr,
+                    types.Part.from_bytes(data=base_bytes, mime_type=base_mime),
+                    types.Part.from_bytes(data=overlay_bytes, mime_type=overlay_mime),
+                ]
+
+                logger.info(
+                    f"Selective edit: base_mime={base_mime} base_size={len(base_bytes)} overlay_size={len(overlay_bytes)}"
+                )
+
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash-image-preview",
+                    contents=contents,
+                )
+
+                # Extract image as in design path below
+                text_response = ""
+                image_b64_url = None
+                parts = response.candidates[0].content.parts
+                logger.info(f"Model returned {len(parts)} part(s) in selective edit")
+                for idx, part in enumerate(parts):
+                    if part.text is not None:
+                        logger.info(f"part[{idx}] type=text len={len(part.text)}")
+                        text_response += part.text
+                    elif part.inline_data is not None:
+                        logger.info(f"part[{idx}] type=inline_data mime={part.inline_data.mime_type}")
+                        image_data = part.inline_data.data
+                        mime_type = part.inline_data.mime_type or "image/png"
+
+                        image_bytes = None
+                        try:
+                            b = image_data if isinstance(image_data, (bytes, bytearray)) else str(image_data).encode('utf-8')
+                            decoded = base64.b64decode(b, validate=False)
+                            if (
+                                decoded.startswith(b"\x89PNG\r\n\x1a\n")
+                                or decoded.startswith(b"\xff\xd8")
+                                or decoded.startswith(b"RIFF")
+                                or decoded.startswith(b"GIF8")
+                            ):
+                                image_bytes = decoded
+                        except Exception:
+                            pass
+                        if image_bytes is None:
+                            image_bytes = image_data if isinstance(image_data, (bytes, bytearray)) else bytes(image_data)
+
+                        real_mime = detect_image_mime(image_bytes, mime_type)
+                        if real_mime != mime_type:
+                            logger.info(f"MIME corrected: model={mime_type} detected={real_mime}")
+                        b64_data = base64.b64encode(image_bytes).decode()
+                        image_b64_url = f"data:{real_mime};base64,{b64_data}"
+                        logger.info(f"Created base64 data URL: {real_mime}, size: {len(image_bytes)} bytes")
+
+                        try:
+                            img = Image.open(io.BytesIO(image_bytes))
+                            save_pil_image(img, prefix="output")
+                            logger.info(f"Successfully saved PIL image: {img.size}")
+                        except Exception as e:
+                            logger.warning(f"Could not save as PIL image (this is OK): {e}")
+                return CircuitGenerationResponse(
+                    text=text_response or "Generated circuit diagram",
+                    image_url=image_b64_url,
+                    success=True,
+                )
+            except Exception as e:
+                logger.error(f"Selective edit failed: {e}")
+                raise
+
         if request.mode == "design":
             # Use Gemini 2.5 Flash Image Preview for design generation
             # Enhanced instruction based on Gemini best practices for circuit generation

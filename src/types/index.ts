@@ -18,6 +18,7 @@ export interface ChatSession {
 export interface CircuitGenerationRequest {
   prompt: string;
   currentImage?: string;
+  paintedImage?: string; // overlay/mask painted by the user (PNG data URL)
   mode: 'design' | 'chat';
 }
 

@@ -23,7 +23,8 @@ function App() {
     loadSession,
     clearCanvas,
     downloadImage,
-    attachImage
+    attachImage,
+    applySelection
   } = useChat();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -54,7 +55,7 @@ function App() {
           <Monitor size={64} className="text-zinc-400 mx-auto mb-6" />
           <h1 className="text-2xl font-bold text-white mb-4">Desktop Required</h1>
           <p className="text-zinc-400 leading-relaxed">
-            Circuit Designer AI is optimized for desktop use. Please open this application on a desktop or laptop computer for the best experience.
+            The Banana Board is optimized for desktop use. Please open this application on a desktop or laptop computer for the best experience.
           </p>
         </div>
       </div>
@@ -84,7 +85,7 @@ function App() {
           >
             <Menu size={20} />
           </button>
-          <h1 className="text-xl font-semibold text-white">Circuit Designer AI</h1>
+          <h1 className="text-xl font-semibold text-white">The Banana Board</h1>
         </div>
       </div>
 
@@ -98,6 +99,7 @@ function App() {
             onDownload={downloadImage}
             isVisible={true}
             className="flex-1"
+            onApplySelection={applySelection}
           />
         </div>
 

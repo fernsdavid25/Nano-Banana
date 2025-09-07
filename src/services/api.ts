@@ -1,6 +1,6 @@
 import { CircuitGenerationRequest, CircuitGenerationResponse } from '../types';
 
-const API_BASE_URL = 'https://192494d08347.ngrok-free.app';
+const API_BASE_URL = 'https://thebananaboard.vercel.app';
 
 interface PromptEnhancementRequest {
   prompt: string;
@@ -23,6 +23,7 @@ export const generateCircuit = async (request: GenerateRequest): Promise<Circuit
     const payload = {
       prompt: request.prompt,
       current_image: request.currentImage,
+      painted_image: request.paintedImage,
       mode: request.mode,
       api_key: request.apiKey,
     };

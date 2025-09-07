@@ -27,7 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className={`fixed inset-y-0 left-0 w-80 bg-zinc-900 h-screen flex flex-col border-r border-zinc-700 z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       {/* Header */}
       <div className="p-6 border-b border-zinc-700 flex items-center justify-between">
-        <h1 className="text-white text-xl font-semibold">Circuit Designer AI</h1>
+        <h1 className="text-white text-xl font-semibold">The Banana Board</h1>
         <button
           onClick={onToggle}
           aria-label="Close sidebar"

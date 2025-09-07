@@ -1,4 +1,4 @@
-# Circuit Designer AI
+# The Banana Board
 
 A React web application for electronics hobbyists and students that generates and edits circuit diagrams from natural language text prompts using Google's Gemini AI models.
 
