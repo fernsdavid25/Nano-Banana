@@ -1,6 +1,6 @@
 import { CircuitGenerationRequest, CircuitGenerationResponse } from '../types';
 
-const API_BASE_URL = 'nano-banana-backend.vercel.app';
+const API_BASE_URL = 'https://nano-banana-backend.vercel.app';
 
 interface GenerateRequest extends CircuitGenerationRequest {
   apiKey: string;
